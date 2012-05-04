@@ -41,8 +41,8 @@ it's error message.
 
 ## Details
 
- 1. The first argument to REWRITE_WITH_LOCATION has to refer to a function in
-    the same module, the second argument has to be in scope?
+ 1. The first argument to `REWRITE_WITH_LOCATION` has to refer to a function in
+    the same module, the second argument has to be in scope
  1. The type of the second argument must be `Location -> a`, where `a` is the
     type of the first argument
 
