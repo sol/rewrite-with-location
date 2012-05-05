@@ -44,7 +44,10 @@ it's error message.
  1. The first argument to `REWRITE_WITH_LOCATION` has to refer to a function in
     the same module, the second argument has to be in scope
  1. The type of the second argument must be `Location -> a`, where `a` is the
-    type of the first argument
+    type of the first argument. (__Note__: For backwards compatibility, it might
+    make more sense to use `String` in place of `Location`. However, having a
+    proper `Location` type would allow things like filtering for originating
+    module.)
 
 ## Disadvantages
 
@@ -62,6 +65,9 @@ Disadvantages:
  * code that uses Template Haskell has an additional runtime dependency ([`template-haskell`][template-haskell])
  * is not valid Haskell98
  * is not available for all architectures (?)
+ * Usage is "opt-in." A library author must explicitly use the TH version of the function with usage information,
+   as opposed to this proposal which would automatically add location information for existing code.
+ * It requires a different syntax which may be unappealing to users.
 
 [template-haskell]: http://hackage.haskell.org/package/template-haskell "Template Haskell on Hackage"
 [jhc-srcloc-annotate]: http://repetae.net/computer/jhc/jhc.shtml#new-extensions
