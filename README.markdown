@@ -56,6 +56,10 @@ great power comes great responsibility!).
 
 ## Comparison with other approaches
 
+### CPP
+
+> TODO
+
 ### Template Haskell
 
 It is possible to achieve something like this with Template Haskell.
