@@ -79,7 +79,9 @@ Disadvantages:
 
 ### Explicit call stacks
 
+It is possibel to get an explicit call stack with
+[`GHC.Stack.currentCallStack`](http://hackage.haskell.org/packages/archive/base/4.5.1.0/doc/html/GHC-Stack.html#v:currentCallStack).
+
 Disadvantages:
 
- * May have a bigger runtime overhead and hence be disabled in production code (?)
- * Are not available yet (?)
+ * Only works for profiling code => Not available by default
