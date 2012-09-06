@@ -64,7 +64,7 @@ great power comes great responsibility!).
 
 It is possible to achieve something like this with Template Haskell.
 
-Disadvantages:
+#### Disadvantages
 
  * code that uses Template Haskell has an additional runtime dependency ([`template-haskell`][template-haskell])
  * is not valid Haskell98
@@ -82,6 +82,15 @@ Disadvantages:
 It is possibel to get an explicit call stack with
 [`GHC.Stack.currentCallStack`](http://hackage.haskell.org/packages/archive/base/4.5.1.0/doc/html/GHC-Stack.html#v:currentCallStack).
 
-Disadvantages:
+#### Disadvantages
 
- * Only works for profiling code => Not available by default
+From the documentation:
+
+> The implementation uses the call-stack simulation maintined by the profiler,
+> so it only works if the program was compiled with -prof and contains suitable
+> SCC annotations (e.g. by using -fprof-auto).
+
+This has the following implications:
+
+ * Not enabled by default
+ * Does not work within GHCi
