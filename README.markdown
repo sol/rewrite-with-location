@@ -11,7 +11,7 @@ pragma][jhc-srcloc-annotate], but slightly more general.
 
     data Location
 
-We put the location value into `IO` (in contrast to JHC's solution), so that it
+in contrast to JHC's solution, we put the location value into `IO`, so that it
 is easier to reason about code.
 
 ## Use cases
