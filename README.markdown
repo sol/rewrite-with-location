@@ -100,4 +100,12 @@ This has the following implications:
 
 ### CPP
 
-> TODO
+We can use CPP's `__FILE__` and `__LINE__` macros to obtain the file and line number that a piece of code is running at,
+and then require that this information be passed into our functions.
+
+#### Disadvantages
+
+* Usage is "opt-in", and therefore will not pervasively address the issues at hand.
+* Is not valid Haskell98
+* Increases code size in a very redundant way
+* No type safety for the values being used; a user could easily enter `"foo" 25` instead of `__FILE__ __LINE__`.
