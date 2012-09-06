@@ -3,12 +3,15 @@
 We propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
 pragma][jhc-srcloc-annotate], but slightly more general.
 
-    error :: String -> a
-    errorLoc :: IO Location -> String -> a
-    {-# REWRITE_WITH_LOCATION error errorLoc -#}
+```haskell
+type Location = String
+```
 
-    type Location = String
-
+```haskell
+error :: String -> a
+errorLoc :: IO Location -> String -> a
+{-# REWRITE_WITH_LOCATION error errorLoc #-}
+```
 In contrast to JHC's solution, we put the location value into `IO`, so that it
 is easier to reason about code.
 
@@ -24,18 +27,22 @@ Compilers that do not support the pragma will use the original implementation
 
 Users can build new combinators based on this mechanism, like:
 
-    myError :: a
-    myError = error "some error message"
+```haskell
+myError :: a
+myError = error "some error message"
 
-    myErrorLoc :: IO Location -> a
-    myErrorLoc loc = errorLoc loc "some error message"
+myErrorLoc :: IO Location -> a
+myErrorLoc loc = errorLoc loc "some error message"
 
-    {-# REWRITE_WITH_LOCATION myError myErrorLoc -#}
+{-# REWRITE_WITH_LOCATION myError myErrorLoc #-}
+```
 
 In contrast, this is not possible with the current mechanism used for assert,
 e.g. `assertNot` with
 
-    assertNot = assert . not
+```haskell
+assertNot = assert . not
+```
 
 will not include locations information about the call site of `assertNot` in
 it's error message.
