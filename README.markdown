@@ -12,7 +12,7 @@ error :: String -> a
 errorLoc :: IO Location -> String -> a
 {-# REWRITE_WITH_LOCATION error errorLoc #-}
 ```
-In contrast to JHC's solution, we put the location value into `IO`, so that it
+In contrast to JHC's solution, we wrap the `Location` value in `IO`, so that it
 is easier to reason about code.
 
 ## Use cases
