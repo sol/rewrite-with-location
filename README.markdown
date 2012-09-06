@@ -1,4 +1,4 @@
-# Proposal: An extensible mechanism for source locations in library code
+# Proposal: A simple and extensible mechanism for source locations in library code
 
 We propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
 pragma][jhc-srcloc-annotate], but slightly more general.
