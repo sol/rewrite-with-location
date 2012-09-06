@@ -63,10 +63,6 @@ This would allow things like filtering log messages by originating module.
 
 ## Comparison with other approaches
 
-### CPP
-
-> TODO
-
 ### Template Haskell
 
 It is possible to achieve something like this with Template Haskell.
@@ -101,3 +97,7 @@ This has the following implications:
 
  * Not enabled by default
  * Does not work within GHCi
+
+### CPP
+
+> TODO
