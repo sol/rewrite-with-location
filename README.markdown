@@ -61,11 +61,6 @@ It might be a good idea to have a proper `Location` type, instead of using
 [`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc)).
 This would allow things like filtering log messages by originating module.
 
-## Disadvantages
-
-People could misuse this feature to change the semantics of their code (with
-great power comes great responsibility!).
-
 ## Comparison with other approaches
 
 ### CPP
