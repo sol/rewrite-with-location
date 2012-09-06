@@ -2,14 +2,17 @@
 
 Assertions marked with (?) need further clarification.
 
-I propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
+We propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
 pragma][jhc-srcloc-annotate], but slightly more general.
 
     error :: String -> a
-    errorLoc :: Location -> String -> a
+    errorLoc :: IO Location -> String -> a
     {-# REWRITE_WITH_LOCATION error errorLoc -#}
 
     data Location
+
+We put the location into `IO` (in contrast to JHC's solution), so that it is
+easier to reason about code.
 
 ## Use cases
 
@@ -26,7 +29,7 @@ Users can build new combinators based on this mechanism, like:
     myError :: a
     myError = error "some error message"
 
-    myErrorLoc :: Location -> a
+    myErrorLoc :: IO Location -> a
     myErrorLoc loc = errorLoc loc "some error message"
 
     {-# REWRITE_WITH_LOCATION myError myErrorLoc -#}
@@ -43,11 +46,11 @@ it's error message.
 
  1. The first argument to `REWRITE_WITH_LOCATION` has to refer to a function in
     the same module, the second argument has to be in scope
- 1. The type of the second argument must be `Location -> a`, where `a` is the
-    type of the first argument. (__Note__: For backwards compatibility, it might
-    make more sense to use `String` in place of `Location`. However, having a
-    proper `Location` type would allow things like filtering for originating
-    module.)
+ 1. The type of the second argument to `REWRITE_WITH_LOCATION` must be `IO
+    Location -> a`, where `a` is the type of the first argument. (__Note__: For
+    backwards compatibility, it might make more sense to use `String` in place
+    of `Location`. However, having a proper `Location` type would allow things
+    like filtering for originating module.)
 
 ## Disadvantages
 
