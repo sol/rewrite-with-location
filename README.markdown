@@ -23,9 +23,9 @@ is easier to reason about code.
 
 ## Properties
 
-Compilers that do not support the pragma will use the original implementation
+Compilers that do not support the pragma will use the original implementation.
 
-Users can build new combinators based on this mechanism, like:
+Users can build new combinators based on this mechanism, e.g.:
 
 ```haskell
 myError :: a
@@ -58,8 +58,7 @@ it's error message.
 
 It might be a good idea to have a proper `Location` type, instead of using
 `String` (something like
-[`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc).
-
+[`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc)).
 This would allow things like filtering log messages by originating module.
 
 ## Disadvantages
