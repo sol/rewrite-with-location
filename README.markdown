@@ -1,7 +1,5 @@
 # Proposal: An extensible mechanism for source locations in library code
 
-Assertions marked with (?) need further clarification.
-
 We propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
 pragma][jhc-srcloc-annotate], but slightly more general.
 
@@ -9,7 +7,7 @@ pragma][jhc-srcloc-annotate], but slightly more general.
     errorLoc :: IO Location -> String -> a
     {-# REWRITE_WITH_LOCATION error errorLoc -#}
 
-    data Location
+    type Location = String
 
 In contrast to JHC's solution, we put the location value into `IO`, so that it
 is easier to reason about code.
@@ -47,10 +45,15 @@ it's error message.
  1. The first argument to `REWRITE_WITH_LOCATION` has to refer to a function in
     the same module, the second argument has to be in scope
  1. The type of the second argument to `REWRITE_WITH_LOCATION` must be `IO
-    Location -> a`, where `a` is the type of the first argument. (__Note__: For
-    backwards compatibility, it might make more sense to use `String` in place
-    of `Location`. However, having a proper `Location` type would allow things
-    like filtering for originating module.)
+    Location -> a`, where `a` is the type of the first argument.
+
+## Modifications
+
+It might be a good idea to have a proper `Location` type, instead of using
+`String` (something like
+[`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc).
+
+This would allow things like filtering log messages by originating module.
 
 ## Disadvantages
 
@@ -71,7 +74,7 @@ It is possible to achieve something like this with Template Haskell.
 
  * code that uses Template Haskell has an additional runtime dependency ([`template-haskell`][template-haskell])
  * is not valid Haskell98
- * is not available for all architectures (?)
+ * is not available for all architectures (depends on GHCi!)
  * Usage is "opt-in." A library author must explicitly use the TH version of the function with usage information,
    as opposed to this proposal which would automatically add location information for existing code.
  * It requires a different syntax which may be unappealing to users.
