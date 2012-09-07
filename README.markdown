@@ -12,6 +12,8 @@ error :: String -> a
 errorLoc :: IO Location -> String -> a
 {-# REWRITE_WITH_LOCATION error errorLoc #-}
 ```
+GHC would then automatically replace all calls to `error` with calls to `errorLoc`, automatically providing the first argument based on the location of the call site.
+
 In contrast to JHC's solution, we wrap the `Location` value in `IO`, so that it
 is easier to reason about code.
 
