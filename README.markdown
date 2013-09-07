@@ -138,8 +138,6 @@ the use of Template Haskell imposes the following limitations:
    ([`template-haskell`][template-haskell])
  * uses different syntax which may be unappealing to users (e.g. Template
    Haskell splices can't be used in infix notation)
- * Usage is "opt-in." A library author must explicitly use the TH version of the function with usage information,
-   as opposed to this proposal which would automatically add location information for existing code.
 
 [template-haskell]: http://hackage.haskell.org/package/template-haskell "Template Haskell on Hackage"
 [jhc-srcloc-annotate]: http://repetae.net/computer/jhc/jhc.shtml#new-extensions
@@ -162,18 +160,6 @@ This has the following implications:
  * does not work in production code
  * imposes significant runtime overhead
  * is not enabled by default
-
-### CPP
-
-We can use CPP's `__FILE__` and `__LINE__` macros to obtain the file and line number that a piece of code is running at,
-and then require that this information be passed into our functions.
-
-**Limitations:**
-
-* Usage is "opt-in", and therefore will not pervasively address the issues at hand.
-* Is not valid Haskell98
-* Increases code size in a very redundant way
-* No type safety for the values being used; a user could easily enter `"foo" 25` instead of `__FILE__ __LINE__`.
 
 ## Conclusion
 
