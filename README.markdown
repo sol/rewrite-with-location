@@ -1,42 +1,118 @@
-# Proposal: A simple and extensible mechanism for source locations in library code
+# Proposal: Source locations for GHC
 
-We propose a solution that is similar to [JHC's `SRCLOC_ANNOTATE`
-pragma][jhc-srcloc-annotate], but slightly more general.
+> A simple and extensible mechanism for source locations in library code
+
+## Problem
+ * When a partial function fails, we have no clue _where_ things went wrong!
+ * We can try to avoid the use of partial functions in our own code, but what
+   about third party libraries (`base`, GHC API)?
+
+For the specific case of `undefined` [Haskell 2010 states] [1] that
+
+> It is expected that compilers will recognize this and insert error messages
+> that are more appropriate to the context in which `undefined` appears.
+
+But GHC currently does not follow this suggestion.
+
+[1]: http://www.haskell.org/onlinereport/haskell2010/haskellch9.html#verbatim-238 "Haskell 2010"
+
+## Design goals
+
+A solution to this problem should
+
+ * work in GHCi
+ * work in production code
+ * work on all platforms
+ * impose zero runtime overhead
+ * not rely on language extensions (at least not on the call site, so that it
+   can be used for `Prelude` functions)
+
+## Proposed solution
+
+JHC addresses the issue with a pragma that rewrites calls to annotated
+functions (see [documentation of JHC's `SRCLOC_ANNOTATE`
+pragma][jhc-srcloc-annotate] for details).
+
+We propose a solution that is similar to JHC's approach, but slightly more
+general.  We introduce a pragma
 
 ```haskell
-type Location = String
+{-# REWRITE_WITH_LOCATION src dst #-}
 ```
+where
 
-```haskell
-error :: String -> a
-errorLoc :: IO Location -> String -> a
-{-# REWRITE_WITH_LOCATION error errorLoc #-}
-```
-GHC would then automatically replace all calls to `error` with calls to `errorLoc`, automatically providing the first argument based on the location of the call site.
+ 1. `src` has to refer to a function in the same module, `dst` has to be in
+    scope
+ 1. the type of `dst` must be `Location -> a`, where `a` is the type of `src`
 
-In contrast to JHC's solution, we wrap the `Location` value in `IO`, so that it
-is easier to reason about code.
-
-## Use cases
-
- * Locations for failing test cases in a test framework
- * Locations for log messages
- * assert/error/undefined
-
-## Properties
+GHC then automatically replaces all calls to `src` with calls to `dst`,
+automatically providing the first argument based on the location of the call
+site.
 
 Compilers that do not support the pragma will use the original implementation.
 
-Users can build new combinators based on this mechanism, e.g.:
+## Use cases
+
+ * Locations for log messages
+ * Locations for failing test cases
+ * `assert`/`error`/`undefined`
+
+## Example
+
+For the purpose of this example we use `String` as `Location`.  But a final
+implementation may use a proper location type (e.g. something like
+[`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc)).
+
+~~~ {.haskell}
+module Logging where
+
+type Location = String
+
+logError :: String -> IO ()
+logError message = putStrLn message
+
+logErrorLoc :: Location -> String -> IO ()
+logErrorLoc loc message = putStrLn (loc ++ ": " ++ message)
+{-# REWRITE_WITH_LOCATION logError logErrorLoc #-}
+~~~
 
 ```haskell
-myError :: a
-myError = error "some error message"
+module Main (main) where
+import Logging
 
-myErrorLoc :: IO Location -> a
-myErrorLoc loc = errorLoc loc "some error message"
+main :: IO ()
+main = logError "Something went wrong!"
+```
 
-{-# REWRITE_WITH_LOCATION myError myErrorLoc #-}
+```
+$ ghci Main.hs
+*Main> main
+Main.hs:5:8-15: Something went wrong!
+```
+
+## Manual lifting of annotated functions
+
+Let's assume we have the following in `GHC.Err`
+
+```haskell
+type Location = String
+error :: String -> a
+errorLoc :: Location -> String -> a
+{-# REWRITE_WITH_LOCATION error errorLoc #-}
+```
+
+and `GHC.Err` exports both `error` and `errorLoc`, then it's possible to
+manually lift functions that use `error`.
+
+```haskell
+head :: [a] -> a
+head (x:_) = x
+head    _  = error "Prelude.head: empty list"
+
+headLoc :: Location -> [a] -> a
+headLoc loc (x:_) = x
+headLoc loc    _  = errorLoc loc "Prelude.head: empty list"
+{-# REWRITE_WITH_LOCATION head headLoc #-}
 ```
 
 In contrast, this is not possible with the current mechanism used for assert,
@@ -46,37 +122,24 @@ e.g. `assertNot` with
 assertNot = assert . not
 ```
 
-will not include locations information about the call site of `assertNot` in
+will not include location information about the call site of `assertNot` in
 it's error message.
-
-## Details
-
- 1. The first argument to `REWRITE_WITH_LOCATION` has to refer to a function in
-    the same module, the second argument has to be in scope
- 1. The type of the second argument to `REWRITE_WITH_LOCATION` must be `IO
-    Location -> a`, where `a` is the type of the first argument.
-
-## Modifications
-
-It might be a good idea to have a proper `Location` type, instead of using
-`String` (something like
-[`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc)).
-This would allow things like filtering log messages by originating module.
 
 ## Comparison with other approaches
 
 ### Template Haskell
 
-It is possible to achieve something like this with Template Haskell.
+It is possible to achieve something like this with Template Haskell.  However,
+the use of Template Haskell imposes the following limitations:
 
-#### Disadvantages
-
- * code that uses Template Haskell has an additional runtime dependency ([`template-haskell`][template-haskell])
- * is not valid Haskell98
- * is not available for all architectures (depends on GHCi!)
+ * does not work on all platforms (requires GHCi)
+ * relies on language extensions (`-XTemplateHaskell`)
+ * imposes an additional runtime dependency
+   ([`template-haskell`][template-haskell])
+ * uses different syntax which may be unappealing to users (e.g. Template
+   Haskell splices can't be used in infix notation)
  * Usage is "opt-in." A library author must explicitly use the TH version of the function with usage information,
    as opposed to this proposal which would automatically add location information for existing code.
- * It requires a different syntax which may be unappealing to users.
 
 [template-haskell]: http://hackage.haskell.org/package/template-haskell "Template Haskell on Hackage"
 [jhc-srcloc-annotate]: http://repetae.net/computer/jhc/jhc.shtml#new-extensions
@@ -85,9 +148,7 @@ It is possible to achieve something like this with Template Haskell.
 ### Explicit call stacks
 
 It is possibel to get an explicit call stack with
-[`GHC.Stack.currentCallStack`](http://hackage.haskell.org/packages/archive/base/4.5.1.0/doc/html/GHC-Stack.html#v:currentCallStack).
-
-#### Disadvantages
+[`GHC.Stack.currentCallStack`](http://hackage.haskell.org/packages/archive/base/4.6.0.1/doc/html/GHC-Stack.html#v:currentCallStack).
 
 From the documentation:
 
@@ -97,17 +158,31 @@ From the documentation:
 
 This has the following implications:
 
- * Not enabled by default
- * Does not work within GHCi
+ * does not work in GHCi
+ * does not work in production code
+ * imposes significant runtime overhead
+ * is not enabled by default
 
 ### CPP
 
 We can use CPP's `__FILE__` and `__LINE__` macros to obtain the file and line number that a piece of code is running at,
 and then require that this information be passed into our functions.
 
-#### Disadvantages
+**Limitations:**
 
 * Usage is "opt-in", and therefore will not pervasively address the issues at hand.
 * Is not valid Haskell98
 * Increases code size in a very redundant way
 * No type safety for the values being used; a user could easily enter `"foo" 25` instead of `__FILE__ __LINE__`.
+
+## Conclusion
+
+In addition to the stated design goals the proposed solution is
+
+ * trivial to implement
+ * available now
+
+The approach has been discussed before, but was dismissed with the assumption
+that the user actually wants stack traces.  However, there are use cases where
+we are not even interested in a stack trace, e.g. _logging_ and _failing test
+cases_.
