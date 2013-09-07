@@ -53,20 +53,21 @@ Compilers that do not support the pragma will use the original implementation.
 
 ## Use cases
 
- * Locations for log messages
- * Locations for failing test cases
+ * Location for log messages
+ * Location for failing test cases
  * `assert`/`error`/`undefined`
 
-## Example
-
-For the purpose of this example we use `String` as `Location`.  But a final
+## Examples
+For the purpose of this examples we use `String` as `Location`.  But a final
 implementation may use a proper location type (e.g. something like
 [`Language.Haskell.TH.Syntax.Loc`](http://hackage.haskell.org/packages/archive/template-haskell/2.7.0.0/doc/html/Language-Haskell-TH-Syntax.html#t:Loc)).
+
+### Location for log messages
 
 ~~~ {.haskell}
 module Logging where
 
-type Location = String
+import GHC.Err (Location)
 
 logError :: String -> IO ()
 logError message = putStrLn message
@@ -90,21 +91,40 @@ $ ghci Main.hs
 Main.hs:5:8-15: Something went wrong!
 ```
 
+### Call site for error / undefined
+
+The described mechanism can be used to add call site locations to `error` and
+`undefined`.
+
+```haskell
+module GHC.Err (Location, error, errorLoc, undefined, undefinedLoc) where
+
+type Location = String
+
+error :: String -> a
+error = errorCall
+
+errorLoc :: Location -> String -> a
+errorLoc loc s = errorCall (loc ++ ": " ++ s)
+{-# REWRITE_WITH_LOCATION error errorLoc #-}
+
+undefined :: a
+undefined =  error "Prelude.undefined"
+
+undefinedLoc :: Location -> a
+undefinedLoc = (`errorLoc` "Prelude.undefined")
+{-# REWRITE_WITH_LOCATION undefined undefinedLoc #-}
+
+errorCall :: String -> a
+errorCall s = raise# (errorCallException s)
+```
 ## Manual lifting of annotated functions
 
-Let's assume we have the following in `GHC.Err`
+It's possible to manually lift functions that use `error` like so:
 
 ```haskell
-type Location = String
-error :: String -> a
-errorLoc :: Location -> String -> a
-{-# REWRITE_WITH_LOCATION error errorLoc #-}
-```
+import GHC.Err
 
-and `GHC.Err` exports both `error` and `errorLoc`, then it's possible to
-manually lift functions that use `error`.
-
-```haskell
 head :: [a] -> a
 head (x:_) = x
 head    _  = error "Prelude.head: empty list"
